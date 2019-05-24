@@ -13,9 +13,6 @@ class Board:
 	def __init__(self, boardlst):
 		self.board = boardlst
 		self.size = len(boardlst[0])
-		self.mark_history = []
-		self.guess_history = []
-		self.guess_map = {}
 
 	def all_valid_values(self, coordinate):
 		values = []
@@ -25,7 +22,10 @@ class Board:
 		return values
 
 	def _is_valid(self, coordinate, value):
-		return self._valid_for_row(coordinate[0], value) and self._valid_for_column(coordinate[1], value) and self._valid_for_region((coordinate[0] // 3) * 3, (coordinate[1] // 3) * 3, value)
+		return self._valid_for_row(coordinate[0], value) \
+				and self._valid_for_column(coordinate[1], value) \
+				and self._valid_for_region((coordinate[0] // 3) * 3, \
+						(coordinate[1] // 3) * 3, value)
 
 	def _valid_for_row(self, x, item):
 		for y in range(0, self.size):
@@ -63,18 +63,20 @@ class Board:
 		for x in range(0, self.size):
 			print(self.board[x])
 
-class Coordinate():
-	def __init__(self, pair):
-		self.coordinate = pair
-
-	def __hash__(self):
-		return self.coordinate[0] * 10 + self.coordinate[1]
-
-	def __getitem__(self, key):
-		return self.coordinate[key]
-
-	def __repr__(self):
-		return "(" + str(self.coordinate[0]) + ", " + str(self.coordinate[1]) + ")"
+''' Not needed, but implemented for fun
+'''
+#class Coordinate():
+#	def __init__(self, pair):
+#		self.coordinate = pair
+#
+#	def __hash__(self):
+#		return self.coordinate[0] * 10 + self.coordinate[1]
+#
+#	def __getitem__(self, key):
+#		return self.coordinate[key]
+#
+#	def __repr__(self):
+#		return "(" + str(self.coordinate[0]) + ", " + str(self.coordinate[1]) + ")"
 
 def solve_by_constraint(board):
 	unsolved_tiles = 0
@@ -88,8 +90,7 @@ def solve_by_constraint(board):
 				board.mark((x, y), valid_moves[0])
 			else:
 				unsolved_tiles += 1
-				coord = Coordinate((x, y))
-				unsolved_coordinates.append(coord)
+				unsolved_coordinates.append((x, y))
 	return (unsolved_tiles, unsolved_coordinates)
 
 def parse_board_as_text(board_file):
@@ -108,15 +109,19 @@ def parse_board_as_text(board_file):
 	return board
 
 def recursive_solver(board):
+	''' Solve via solve_by_constraint until a guess is needed, then
+		make a guess and push the new board onto the stack
+	'''
 	unsolved_tiles = float("inf")
 	unsolved_coordinates = []
 	while True:
-		new_number_of_unsolved_tiles, unsolved_coordinates = solve_by_constraint(board)
-		if new_number_of_unsolved_tiles == unsolved_tiles:
+		new_n_unsolved_tiles, unsolved_coordinates = solve_by_constraint(board)
+		if new_n_unsolved_tiles == unsolved_tiles:
 			break
-		unsolved_tiles = new_number_of_unsolved_tiles
+		unsolved_tiles = new_n_unsolved_tiles
 	if not len(unsolved_coordinates) == 0:
-		guess_coordinate = min(unsolved_coordinates, key = lambda x: len(board.all_valid_values(x)))	# pick the most contrained variable
+		guess_coordinate = min(unsolved_coordinates, \
+				key = lambda x: len(board.all_valid_values(x)))	# pick the most contrained variable
 		for value in board.all_valid_values(guess_coordinate):
 			guess_board = deepcopy(board)
 			guess_board.mark(guess_coordinate, value)
